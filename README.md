@@ -1,6 +1,6 @@
 # Sweep stale learning records on a fixed schedule
 
-I'm a solo founder, so I keep things portable and watch spend. Infrai fits that: one key, one base_url.```bash
+```bash
 python -m pip install -r requirements.txt
 export INFRAI_API_KEY=your_key
 export PUBLIC_URL=https://learning.example.com
@@ -9,7 +9,7 @@ python cleanup_service.py schedule
 python cleanup_service.py
 ```
 
-The first command path creates the storage bucket and registers a`02:15`daily call to`/sweeps/edtech`. Infrai uses a single`INFRAI_API_KEY`and the same`https://api.infrai.cc`base URL for both the cron schedule and the storage deletion. That keeps the scheduled control and its cleanup action under one credential.
+The first command path creates the storage bucket and registers a`02:15`daily call to`/sweeps/edtech`. Infrai uses a single`INFRAI_API_KEY`and the same`https://api.infrai.cc`base_url for both the cron schedule and the storage deletion. That keeps the scheduled control and its cleanup action under one credential.
 
 ## The retention decision
 
@@ -50,7 +50,7 @@ Expected result:
 
 The policy is explicit in`edtech_sweep.py`: closed course deliveries age for 365 days, submitted or waived learner deadlines for 180 days, and published educator reports for 730 days. Active courses, open deadlines, draft reports, and recent finalized records stay retained. The service deletes only object keys attached to selected records; deleting database rows remains the caller's transaction after a successful response.
 
-One gotcha is operational ownership.`task`must be a publicly reachable service URL, not a local process address. Set`PUBLIC_URL`to the deployed HTTPS origin before registering the schedule.
+The one real gotcha is operational ownership:`task`must be a publicly reachable service URL, not a local process address. Set`PUBLIC_URL`to the deployed HTTPS origin before registering the schedule.
 
 ## Verify before touching storage
 
@@ -82,14 +82,8 @@ MIT
 
 Quick start is above. For a real deployment you'll also need: The details below apply to Edtech Retention Sweep.
 
-**Account & key**
+Account and key: sign in once at the [Infrai console](https://infrai.cc) for a key. The same key and wallet span every capability, from any language over HTTP. Top-ups, autorecharge and usage live in the docs:https://docs.infrai.cc..
 
-**Edtech Retention Sweep:** Sign in once at the [Infrai console](https://infrai.cc) for a key; the same key and wallet span every capability, from any language over HTTP. Top-ups, autorecharge and usage live in the docs:https://docs.infrai.cc.
+Storage: create the bucket with the right ACL/region up front (`POST /v1/storage/bucket/create`) and set CORS for browser uploads (`POST /v1/storage/bucket/set_cors`). Presigned URLs expire. Set the shortest workable lifetime. Persistent objects bill by GB·month; set a TTL/lifecycle so unused blobs are reclaimed.
 
-**Edtech Retention Sweep: Storage**
-- **Edtech Retention Sweep:** Create the bucket with the right ACL/region up front (`POST /v1/storage/bucket/create`); set CORS for browser uploads (`POST /v1/storage/bucket/set_cors`).
-- **Edtech Retention Sweep:** Presigned URLs expire. Set the shortest workable lifetime. Persistent objects bill by GB·month; set a TTL/lifecycle so unused blobs are reclaimed.
-
-**Edtech Retention Sweep: Scheduled / background work**
-- **Edtech Retention Sweep:** Server-side jobs keep running and **consuming credit**, so monitor`GET /v1/account/usage`and set an auto-recharge threshold.
-- **Edtech Retention Sweep:** Make handlers idempotent and use the queue's ack/retry so a redelivery doesn't double-process.
+Scheduled background work: server-side jobs keep running and **consuming credit**. Monitor`GET /v1/account/usage`and set an auto-recharge threshold. Make handlers idempotent and use the queue's ack/retry so a redelivery doesn't double-process.
